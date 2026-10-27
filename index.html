@@ -1,299 +1,480 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>义卖会金额统计</title>
-  <style>
-    :root { --green:#38d66b; --dark:#101820; --card:#19252e; --gold:#ffe066; }
-    * { box-sizing: border-box; }
-    body {
-      margin:0; min-height:100vh; color:#f4f7f8;
-      font-family: "Microsoft YaHei", system-ui, sans-serif;
-      background: radial-gradient(circle at top, #254b3b 0, #13252b 42%, #0b1118 100%);
-      display:flex; align-items:center; justify-content:center; padding:24px;
-    }
-    .wrap { width:min(760px, 100%); }
-    header { text-align:center; margin-bottom:22px; }
-    .badge { display:inline-block; padding:6px 12px; border:1px solid #4e9d71; border-radius:999px; color:#a9ffc5; font-size:13px; }
-    h1 { margin:12px 0 8px; font-size:clamp(28px, 5vw, 42px); }
-    .subtitle { color:#c4d2d6; margin:0; }
-    .card {
-      background:rgba(25,37,46,.94); border:1px solid #3d555b; border-radius:20px;
-      padding:clamp(20px, 5vw, 34px); box-shadow:0 18px 50px #0005; margin-bottom:18px;
-    }
-    .label { color:#c4d2d6; font-size:15px; }
-    .money { color:var(--green); font-size:clamp(42px, 10vw, 68px); font-weight:800; letter-spacing:-1px; margin:8px 0 18px; overflow-wrap:anywhere; }
-    .bar { height:12px; background:#0c151b; border-radius:999px; overflow:hidden; border:1px solid #405258; }
-    .bar > div { height:100%; width:0; background:linear-gradient(90deg,#26b85c,#b2ff70); transition:width .35s ease; }
-    .goals { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:16px; }
-    .goal { padding:13px; border-radius:12px; background:#101a20; border:1px solid #35484e; }
-    .goal strong { display:block; margin-bottom:5px; }
-    .goal span { color:#b8c8cb; font-size:13px; }
-    .form-row { display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
-    input {
-      flex:1; min-width:160px; padding:13px 14px; border-radius:10px;
-      border:1px solid #526a70; background:#0c151b; color:white; font-size:16px;
-    }
-    button { border:0; border-radius:10px; padding:13px 18px; font-weight:700; font-size:15px; cursor:pointer; }
-    .primary { background:#49df7b; color:#082114; }
-    .secondary { background:#31444b; color:white; }
-    .hint { color:#a9babe; font-size:13px; line-height:1.6; margin:12px 0 0; }
-    .countdown { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-top:18px; }
-    .timebox { background:#0d171d; border:1px solid #34494f; border-radius:12px; text-align:center; padding:14px 6px; }
-    .num { display:block; font-size:clamp(24px, 6vw, 36px); font-weight:800; color:var(--gold); }
-    .unit { font-size:12px; color:#bdc9cc; }
-    footer { text-align:center; color:#91a4a8; font-size:12px; padding:4px 0 10px; }
-    .overlay { position:fixed; inset:0; z-index:10; background:#000b; display:none; align-items:center; justify-content:center; padding:18px; }
-    .popup { width:min(520px,100%); background:#1d2429; border:3px solid #737b80; border-radius:16px; padding:16px; box-shadow:0 18px 70px #000b; text-align:center; }
-    .popup h2 { margin:4px 0 12px; font-size:22px; }
-    .popup img { display:block; max-width:100%; max-height:48vh; width:auto; height:auto; object-fit:contain; margin:0 auto 14px; image-rendering:auto; }
-    .popup p { color:#c8d2d5; margin:0 0 14px; }
-    @media (max-width:480px) { .goals { grid-template-columns:1fr; } .countdown { gap:6px; } .timebox { padding:11px 3px; } }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>义卖会金额统计</title>
+
+<style>
+:root {
+  --green: #38d66b;
+  --gold: #ffe066;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 24px;
+  color: #f4f7f8;
+  font-family: "Microsoft YaHei", system-ui, sans-serif;
+  background: radial-gradient(circle at top, #254b3b, #13252b 42%, #0b1118);
+  display: flex;
+  justify-content: center;
+}
+
+.wrap { width: min(760px, 100%); }
+
+header {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border: 1px solid #4e9d71;
+  border-radius: 999px;
+  color: #a9ffc5;
+}
+
+h1 { font-size: clamp(28px, 5vw, 42px); }
+
+.card {
+  background: rgba(25,37,46,.94);
+  border: 1px solid #3d555b;
+  border-radius: 20px;
+  padding: clamp(20px, 5vw, 34px);
+  margin-bottom: 18px;
+  box-shadow: 0 18px 50px #0005;
+}
+
+.label { color: #c4d2d6; }
+
+.money {
+  color: var(--green);
+  font-size: clamp(42px, 10vw, 68px);
+  font-weight: 800;
+  margin: 12px 0 18px;
+  overflow-wrap: anywhere;
+}
+
+.bar {
+  height: 12px;
+  background: #0c151b;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+#progressBar {
+  height: 100%;
+  width: 0;
+  background: linear-gradient(90deg, #26b85c, #b2ff70);
+  transition: width .35s;
+}
+
+.goals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.goal {
+  padding: 13px;
+  border-radius: 12px;
+  background: #101a20;
+  border: 1px solid #35484e;
+}
+
+.goal strong { display: block; margin-bottom: 5px; }
+.goal span { color: #b8c8cb; font-size: 13px; }
+
+.form-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+input {
+  flex: 1;
+  min-width: 150px;
+  padding: 13px;
+  border-radius: 10px;
+  border: 1px solid #526a70;
+  background: #0c151b;
+  color: white;
+  font-size: 16px;
+}
+
+input:disabled, button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+button {
+  border: 0;
+  border-radius: 10px;
+  padding: 13px 18px;
+  font-weight: bold;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.primary { background: #49df7b; color: #082114; }
+.secondary { background: #31444b; color: white; }
+
+.hint {
+  color: #a9babe;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.countdown {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.timebox {
+  background: #0d171d;
+  border: 1px solid #34494f;
+  border-radius: 12px;
+  text-align: center;
+  padding: 14px 6px;
+}
+
+.num {
+  display: block;
+  font-size: clamp(24px, 6vw, 36px);
+  font-weight: 800;
+  color: var(--gold);
+}
+
+.unit { font-size: 12px; color: #bdc9cc; }
+
+footer {
+  text-align: center;
+  color: #91a4a8;
+  font-size: 12px;
+  padding: 10px 0;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  background: #000b;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+}
+
+.popup {
+  width: min(520px, 100%);
+  background: #1d2429;
+  border: 3px solid #737b80;
+  border-radius: 16px;
+  padding: 16px;
+  text-align: center;
+}
+
+.popup img {
+  display: block;
+  max-width: 100%;
+  max-height: 48vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  margin: 0 auto 14px;
+}
+
+@media (max-width: 480px) {
+  .goals { grid-template-columns: 1fr; }
+  .countdown { gap: 5px; }
+}
+</style>
 </head>
+
 <body>
-  <main class="wrap">
-    <header>
-      <span class="badge">⛏️ 义卖会 · 成就统计</span>
-      <h1>🏆 义卖会筹款进度</h1>
-      <p class="subtitle">每一份支持，都是我们前进的力量！</p>
-    </header>
+<main class="wrap">
 
-    <section class="card" aria-labelledby="money-heading">
-      <div class="label" id="money-heading">目前筹得金额</div>
-      <div class="money" id="moneyDisplay">RM 0.00</div>
-      <div class="bar" aria-label="筹款进度"><div id="progressBar"></div></div>
-      <div class="goals">
-        <div class="goal"><strong id="goal10">🔒 RM10 成就</strong><span id="goal10Text">筹款超过 RM10 即可解锁</span></div>
-        <div class="goal"><strong id="goal100">🔒 RM100 成就</strong><span id="goal100Text">筹款超过 RM100 即可解锁</span></div>
-      </div>
-      <div class="form-row">
-        <input id="amountInput" type="number" min="0" step="0.01" placeholder="输入目前总金额，例如 35.50" aria-label="目前筹款金额">
-        <button class="primary" id="saveButton">更新金额</button>
-      </div>
-      <p class="hint">输入义卖会目前筹得的总金额，再按“更新金额”。金额会保存在这台设备的浏览器中。</p>
-    </section>
+<header>
+  <span class="badge">⛏️ 义卖会 · 成就统计</span>
+  <h1>🏆 义卖会筹款进度</h1>
+  <p>每一份支持，都是我们前进的力量！</p>
+</header>
 
-    <button id="unlockButton" type="button">
-    🔒 管理员解锁
-</button>
+<section class="card">
+  <div class="label">目前筹得金额</div>
+  <div class="money" id="moneyDisplay">RM 0.00</div>
 
-<input
-    id="amountInput"
-    type="number"
-    min="0"
-    step="0.01"
-    placeholder="请输入筹款金额"
-    disabled
->
+  <div class="bar">
+    <div id="progressBar"></div>
+  </div>
 
-<button id="saveButton" type="button" disabled>
-    更新金额
-</button>
+  <div class="goals">
+    <div class="goal">
+      <strong id="goal10">🔒 RM10 成就</strong>
+      <span id="goal10Text">筹款超过 RM10 即可解锁</span>
+    </div>
 
-<button id="lockButton" type="button">
-    🔐 重新锁定
-</button>
-
-    <section class="card">
-      <div class="label">📅 距离 11 月 11 日</div>
-      <h2 style="margin:8px 0 0">特别日子倒数</h2>
-      <div class="countdown">
-        <div class="timebox"><span class="num" id="days">0</span><span class="unit">天</span></div>
-        <div class="timebox"><span class="num" id="hours">00</span><span class="unit">小时</span></div>
-        <div class="timebox"><span class="num" id="minutes">00</span><span class="unit">分钟</span></div>
-        <div class="timebox"><span class="num" id="seconds">00</span><span class="unit">秒</span></div>
-      </div>
-      <p class="hint" id="countdownMessage">一起期待 11 月 11 日！</p>
-    </section>
-    <footer>义卖会筹款统计网页 · 金额仅保存在当前浏览器</footer>
-  </main>
-
-  <div class="overlay" id="popupOverlay" role="dialog" aria-modal="true" aria-labelledby="popupTitle">
-    <div class="popup">
-      <h2 id="popupTitle">获得成就！</h2>
-      <img id="popupImage" src="1.png" alt="Minecraft 风格成就通知">
-      <p id="popupText">恭喜！</p>
-      <button class="primary" id="nextPopupButton">继续</button>
+    <div class="goal">
+      <strong id="goal100">🔒 RM100 成就</strong>
+      <span id="goal100Text">筹款超过 RM100 即可解锁</span>
     </div>
   </div>
 
-  <script>
-    const amountInput = document.getElementById('amountInput');
-    const moneyDisplay = document.getElementById('moneyDisplay');
-    const progressBar = document.getElementById('progressBar');
-    const overlay = document.getElementById('popupOverlay');
-    const popupImage = document.getElementById('popupImage');
-    const popupTitle = document.getElementById('popupTitle');
-    const popupText = document.getElementById('popupText');
-    const nextPopupButton = document.getElementById('nextPopupButton');
+  <div class="form-row">
+    <button class="secondary" id="unlockButton">🔒 管理员解锁</button>
+    <span id="lockStatus">目前已锁定</span>
+  </div>
 
-    let amount = Number(localStorage.getItem('fundraisingAmount') || 0);
-    let popupQueue = [];
+  <div class="form-row">
+    <input
+      id="amountInput"
+      type="number"
+      min="0"
+      step="0.01"
+      placeholder="请先输入密码解锁"
+      disabled
+    >
 
-    function formatRM(value) {
-      return 'RM ' + value.toLocaleString('en-MY', {minimumFractionDigits:2, maximumFractionDigits:2});
-    }
+    <button class="primary" id="saveButton" disabled>
+      更新金额
+    </button>
 
-    function renderAmount() {
-      moneyDisplay.textContent = formatRM(amount);
-      amountInput.value = amount.toFixed(2);
-      progressBar.style.width = Math.min(amount / 100 * 100, 100) + '%';
-      document.getElementById('goal10').textContent = amount > 10 ? '✅ RM10 成就已解锁' : '🔒 RM10 成就';
-      document.getElementById('goal10Text').textContent = amount > 10 ? '太棒了！已经超过 RM10！' : '筹款超过 RM10 即可解锁';
-      document.getElementById('goal100').textContent = amount > 100 ? '🏆 RM100 成就已解锁' : '🔒 RM100 成就';
-      document.getElementById('goal100Text').textContent = amount > 100 ? '太厉害了！已经超过 RM100！' : '筹款超过 RM100 即可解锁';
-    }
+    <button class="secondary" id="lockButton" hidden>
+      🔐 重新锁定
+    </button>
+  </div>
 
-    ```javascript
-function saveAmount() {
-    if (!isUnlocked) {
-        alert('🔒 请先输入管理员密码！');
-        return;
-    }
+  <p class="hint">
+    修改金额需要管理员密码。金额保存在当前浏览器中。
+  </p>
+</section>
 
-    const value = Number(amountInput.value);
+<section class="card">
+  <div class="label">📅 距离 11 月 11 日</div>
+  <h2>特别日子倒数</h2>
 
-    if (!Number.isFinite(value) || value < 0) {
-        alert('请输入有效的金额（不能小于 RM0）。');
-        return;
-    }
+  <div class="countdown">
+    <div class="timebox"><span class="num" id="days">0</span><span class="unit">天</span></div>
+    <div class="timebox"><span class="num" id="hours">00</span><span class="unit">小时</span></div>
+    <div class="timebox"><span class="num" id="minutes">00</span><span class="unit">分钟</span></div>
+    <div class="timebox"><span class="num" id="seconds">00</span><span class="unit">秒</span></div>
+  </div>
 
-    amount = Math.round(value * 100) / 100;
+  <p class="hint" id="countdownMessage"></p>
+</section>
 
-    localStorage.setItem('fundraisingAmount', String(amount));
+<footer>义卖会筹款统计网页</footer>
+</main>
 
-    renderAmount();
+<div class="overlay" id="popupOverlay" role="dialog" aria-modal="true">
+  <div class="popup">
+    <h2 id="popupTitle">获得成就！</h2>
+    <img id="popupImage" src="1.png" alt="成就图片">
+    <p id="popupText"></p>
+    <button class="primary" id="nextPopupButton">关闭</button>
+  </div>
+</div>
 
-    alert('✅ 筹款金额已更新！');
-}
-```
+<script>
+"use strict";
 
-
-    function nextNovember11(fromDate) {
-      const year = fromDate.getFullYear();
-      const target = new Date(year, 10, 11, 0, 0, 0);
-      if (fromDate >= target && !(fromDate.getMonth() === 10 && fromDate.getDate() === 11)) {
-        return new Date(year + 1, 10, 11, 0, 0, 0);
-      }
-      return target;
-    }
-
-    function updateCountdown() {
-      const now = new Date();
-      const target = nextNovember11(now);
-      const diff = Math.max(0, target - now);
-      document.getElementById('days').textContent = Math.floor(diff / 86400000);
-      document.getElementById('hours').textContent = String(Math.floor(diff / 3600000) % 24).padStart(2, '0');
-      document.getElementById('minutes').textContent = String(Math.floor(diff / 60000) % 60).padStart(2, '0');
-      document.getElementById('seconds').textContent = String(Math.floor(diff / 1000) % 60).padStart(2, '0');
-      document.getElementById('countdownMessage').textContent =
-        now.getMonth() === 10 && now.getDate() === 11
-          ? '🎉 今天就是 11 月 11 日！'
-          : '目标日期：' + target.getFullYear() + ' 年 11 月 11 日。';
-    }
-
-    function isNovember11() {
-      const now = new Date();
-      return now.getMonth() === 10 && now.getDate() === 11;
-    }
-
-    function showPopup(item) {
-      popupTitle.textContent = item.title;
-      popupText.textContent = item.text;
-      popupImage.src = item.image;
-      popupImage.alt = item.title;
-      nextPopupButton.textContent = popupQueue.length ? '下一个' : '关闭';
-      overlay.style.display = 'flex';
-    }
-
-    function showNextPopup() {
-      if (popupQueue.length) {
-        showPopup(popupQueue.shift());
-      } else {
-        overlay.style.display = 'none';
-      }
-    }
-
-    nextPopupButton.addEventListener('click', showNextPopup);
-    overlay.addEventListener('click', e => {
-      if (e.target === overlay) showNextPopup();
-    });
-
-    function checkStartupPopups() {
-      // 每次开启网页，按条件依次显示；11月11日特别弹窗优先显示。
-      if (isNovember11()) {
-        popupQueue.push({
-          title: '特别日子！',
-          text: '🎉 今天是 11 月 11 日！祝义卖会一切顺利！',
-          image: 'mc.png'
-        });
-      }
-      if (amount > 100) {
-        popupQueue.push({
-          title: '获得成就！',
-          text: '🏆 义卖会筹款已经超过 RM100！',
-          image: 'mc2.png'
-        });
-      } else if (amount > 10) {
-        popupQueue.push({
-          title: '获得成就！',
-          text: '💚 义卖会筹款已经超过 RM10！',
-          image: '1.png'
-        });
-      }
-      if (popupQueue.length) showNextPopup();
-    }
-
-    renderAmount();
-    updateCountdown();
-    setInterval(updateCountdown, 1000);
-    window.addEventListener('load', checkStartupPopups);
-
-    // 管理员密码
-const ADMIN_PASSWORD = '123456767';
-
-// 初始状态：锁定
+// =============================
+// 管理员密码设置
+// =============================
+const ADMIN_PASSWORD = "123456767";
 let isUnlocked = false;
 
-// 解锁按钮
-document.getElementById('unlockButton').addEventListener('click', () => {
-    if (isUnlocked) return;
+// =============================
+// 网页元素
+// =============================
+const amountInput = document.getElementById("amountInput");
+const saveButton = document.getElementById("saveButton");
+const unlockButton = document.getElementById("unlockButton");
+const lockButton = document.getElementById("lockButton");
+const lockStatus = document.getElementById("lockStatus");
 
-    const password = prompt('请输入管理员密码：');
+const moneyDisplay = document.getElementById("moneyDisplay");
+const progressBar = document.getElementById("progressBar");
 
-    if (password === ADMIN_PASSWORD) {
-        isUnlocked = true;
+const overlay = document.getElementById("popupOverlay");
+const popupImage = document.getElementById("popupImage");
+const popupTitle = document.getElementById("popupTitle");
+const popupText = document.getElementById("popupText");
+const nextPopupButton = document.getElementById("nextPopupButton");
 
-        document.getElementById('amountInput').disabled = false;
-        document.getElementById('saveButton').disabled = false;
+let amount = 0;
+let popupQueue = [];
 
-        alert('✅ 解锁成功！现在可以修改金额。');
-    } else if (password !== null) {
-        alert('❌ 密码错误！无法修改金额。');
-    }
-});
+// =============================
+// 读取已保存金额
+// =============================
+try {
+  amount = Number(localStorage.getItem("fundraisingAmount") || 0);
 
-// 重新锁定按钮
-document.getElementById('lockButton').addEventListener('click', () => {
-    isUnlocked = false;
-
-    document.getElementById('amountInput').disabled = true;
-    document.getElementById('saveButton').disabled = true;
-
-    alert('🔒 已重新锁定！');
-});
-
-// 修改金额前检查密码状态
-function checkPermission() {
-    if (!isUnlocked) {
-        alert('🔒 请先输入管理员密码！');
-        return false;
-    }
-
-    return true;
+  if (!Number.isFinite(amount) || amount < 0) {
+    amount = 0;
+  }
+} catch (error) {
+  amount = 0;
 }
-  </script>
-</body>
-</html>
+
+// =============================
+// 锁定和解锁
+// =============================
+function setUnlocked(unlocked) {
+  isUnlocked = unlocked;
+
+  amountInput.disabled = !unlocked;
+  saveButton.disabled = !unlocked;
+
+  unlockButton.hidden = unlocked;
+  lockButton.hidden = !unlocked;
+
+  lockStatus.textContent = unlocked
+    ? "🔓 已解锁：可以修改金额"
+    : "🔒 目前已锁定";
+
+  lockStatus.style.color = unlocked ? "#9dffb8" : "#ffd978";
+
+  amountInput.placeholder = unlocked
+    ? "输入目前总金额，例如 35.50"
+    : "请先输入密码解锁";
+}
+
+unlockButton.addEventListener("click", () => {
+  const password = prompt("请输入管理员密码：");
+
+  if (password === null) return;
+
+  if (password === ADMIN_PASSWORD) {
+    setUnlocked(true);
+    alert("✅ 解锁成功！");
+  } else {
+    alert("❌ 密码错误！");
+  }
+});
+
+lockButton.addEventListener("click", () => {
+  setUnlocked(false);
+  alert("🔒 已重新锁定！");
+});
+
+// =============================
+// 显示金额和成就
+// =============================
+function formatRM(value) {
+  return "RM " + value.toLocaleString("en-MY", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+function renderAmount() {
+  moneyDisplay.textContent = formatRM(amount);
+
+  if (document.activeElement !== amountInput) {
+    amountInput.value = amount.toFixed(2);
+  }
+
+  progressBar.style.width = Math.min(amount, 100) + "%";
+
+  document.getElementById("goal10").textContent =
+    amount > 10 ? "✅ RM10 成就已解锁" : "🔒 RM10 成就";
+
+  document.getElementById("goal10Text").textContent =
+    amount > 10 ? "太棒了！已经超过 RM10！" : "筹款超过 RM10 即可解锁";
+
+  document.getElementById("goal100").textContent =
+    amount > 100 ? "🏆 RM100 成就已解锁" : "🔒 RM100 成就";
+
+  document.getElementById("goal100Text").textContent =
+    amount > 100 ? "太厉害了！已经超过 RM100！" : "筹款超过 RM100 即可解锁";
+}
+
+// =============================
+// 保存金额：必须已解锁
+// =============================
+function saveAmount() {
+  if (!isUnlocked) {
+    alert("🔒 请先输入管理员密码！");
+    return;
+  }
+
+  const rawValue = amountInput.value;
+
+  if (rawValue.trim() === "") {
+    alert("请输入筹款金额。");
+    return;
+  }
+
+  const value = Number(rawValue);
+
+  if (!Number.isFinite(value) || value < 0) {
+    alert("请输入有效金额，不能小于 RM0。");
+    return;
+  }
+
+  amount = Math.round(value * 100) / 100;
+
+  try {
+    localStorage.setItem("fundraisingAmount", String(amount));
+  } catch (error) {
+    alert("浏览器无法保存金额，请检查浏览器设置。");
+    return;
+  }
+
+  renderAmount();
+  alert("✅ 筹款金额已更新！");
+}
+
+saveButton.addEventListener("click", saveAmount);
+
+amountInput.addEventListener("keydown", event => {
+  if (event.key === "Enter") saveAmount();
+});
+
+// =============================
+// 11月11日倒数
+// =============================
+function nextNovember11(now) {
+  let year = now.getFullYear();
+
+  const target = new Date(year, 10, 11, 0, 0, 0);
+
+  if (now > target && !(now.getMonth() === 10 && now.getDate() === 11)) {
+    year++;
+  }
+
+  return new Date(year, 10, 11, 0, 0, 0);
+}
+
+function updateCountdown() {
+  const now = new Date();
+  const target = nextNovember11(now);
+  const diff = Math.max(0, target - now);
+
+  document.getElementById("days").textContent =
+    Math.floor(diff / 86400000);
+
+  document.getElementById("hours").textContent =
+    String(Math.floor(diff / 3600000) % 24).padStart(2, "0");
+
+  document.getElementById("minutes").textContent =
+    String(Math.floor(diff / 60000) % 60).padStart(2, "0");
+
+  document.getElementById("seconds").textContent =
+    String(Math.floor(diff / 1000) % 60).padStart(2, "0");
+
+  document.getElementById("countdownMessage").textContent =
+    now.getMonth() === 10 &&
+
