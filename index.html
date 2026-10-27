@@ -75,6 +75,27 @@
       <p class="hint">输入义卖会目前筹得的总金额，再按“更新金额”。金额会保存在这台设备的浏览器中。</p>
     </section>
 
+    <button id="unlockButton" type="button">
+    🔒 管理员解锁
+</button>
+
+<input
+    id="amountInput"
+    type="number"
+    min="0"
+    step="0.01"
+    placeholder="请输入筹款金额"
+    disabled
+>
+
+<button id="saveButton" type="button" disabled>
+    更新金额
+</button>
+
+<button id="lockButton" type="button">
+    🔐 重新锁定
+</button>
+
     <section class="card">
       <div class="label">📅 距离 11 月 11 日</div>
       <h2 style="margin:8px 0 0">特别日子倒数</h2>
@@ -125,19 +146,30 @@
       document.getElementById('goal100Text').textContent = amount > 100 ? '太厉害了！已经超过 RM100！' : '筹款超过 RM100 即可解锁';
     }
 
-    function saveAmount() {
-      const value = Number(amountInput.value);
-      if (!Number.isFinite(value) || value < 0) {
-        alert('请输入有效的金额（不能小于 RM0）。');
+    ```javascript
+function saveAmount() {
+    if (!isUnlocked) {
+        alert('🔒 请先输入管理员密码！');
         return;
-      }
-      amount = Math.round(value * 100) / 100;
-      localStorage.setItem('fundraisingAmount', String(amount));
-      renderAmount();
     }
 
-    document.getElementById('saveButton').addEventListener('click', saveAmount);
-    amountInput.addEventListener('keydown', e => { if (e.key === 'Enter') saveAmount(); });
+    const value = Number(amountInput.value);
+
+    if (!Number.isFinite(value) || value < 0) {
+        alert('请输入有效的金额（不能小于 RM0）。');
+        return;
+    }
+
+    amount = Math.round(value * 100) / 100;
+
+    localStorage.setItem('fundraisingAmount', String(amount));
+
+    renderAmount();
+
+    alert('✅ 筹款金额已更新！');
+}
+```
+
 
     function nextNovember11(fromDate) {
       const year = fromDate.getFullYear();
@@ -218,6 +250,50 @@
     updateCountdown();
     setInterval(updateCountdown, 1000);
     window.addEventListener('load', checkStartupPopups);
+
+    // 管理员密码
+const ADMIN_PASSWORD = '123456767';
+
+// 初始状态：锁定
+let isUnlocked = false;
+
+// 解锁按钮
+document.getElementById('unlockButton').addEventListener('click', () => {
+    if (isUnlocked) return;
+
+    const password = prompt('请输入管理员密码：');
+
+    if (password === ADMIN_PASSWORD) {
+        isUnlocked = true;
+
+        document.getElementById('amountInput').disabled = false;
+        document.getElementById('saveButton').disabled = false;
+
+        alert('✅ 解锁成功！现在可以修改金额。');
+    } else if (password !== null) {
+        alert('❌ 密码错误！无法修改金额。');
+    }
+});
+
+// 重新锁定按钮
+document.getElementById('lockButton').addEventListener('click', () => {
+    isUnlocked = false;
+
+    document.getElementById('amountInput').disabled = true;
+    document.getElementById('saveButton').disabled = true;
+
+    alert('🔒 已重新锁定！');
+});
+
+// 修改金额前检查密码状态
+function checkPermission() {
+    if (!isUnlocked) {
+        alert('🔒 请先输入管理员密码！');
+        return false;
+    }
+
+    return true;
+}
   </script>
 </body>
 </html>
