@@ -3,12 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#13252b">
 <title>义卖会金额统计</title>
 
 <style>
 :root {
   --green: #38d66b;
   --gold: #ffe066;
+  --dark: #101820;
+  --card: rgba(25,37,46,.96);
 }
 
 * { box-sizing: border-box; }
@@ -42,7 +45,7 @@ header {
 h1 { font-size: clamp(28px, 5vw, 42px); }
 
 .card {
-  background: rgba(25,37,46,.94);
+  background: var(--card);
   border: 1px solid #3d555b;
   border-radius: 20px;
   padding: clamp(20px, 5vw, 34px);
@@ -88,8 +91,15 @@ h1 { font-size: clamp(28px, 5vw, 42px); }
   border: 1px solid #35484e;
 }
 
-.goal strong { display: block; margin-bottom: 5px; }
-.goal span { color: #b8c8cb; font-size: 13px; }
+.goal strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.goal span {
+  color: #b8c8cb;
+  font-size: 13px;
+}
 
 .form-row {
   display: flex;
@@ -110,7 +120,8 @@ input {
   font-size: 16px;
 }
 
-input:disabled, button:disabled {
+input:disabled,
+button:disabled {
   opacity: .45;
   cursor: not-allowed;
 }
@@ -124,14 +135,35 @@ button {
   cursor: pointer;
 }
 
-.primary { background: #49df7b; color: #082114; }
-.secondary { background: #31444b; color: white; }
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.primary {
+  background: #49df7b;
+  color: #082114;
+}
+
+.secondary {
+  background: #31444b;
+  color: white;
+}
 
 .hint {
   color: #a9babe;
   font-size: 13px;
   line-height: 1.6;
 }
+
+.status {
+  overflow-wrap: anywhere;
+}
+
+.status.ok { color: #9dffb8; }
+.status.error { color: #ff9f9f; }
+.status.wait { color: #ffe39a; }
 
 .countdown {
   display: grid;
@@ -155,7 +187,10 @@ button {
   color: var(--gold);
 }
 
-.unit { font-size: 12px; color: #bdc9cc; }
+.unit {
+  font-size: 12px;
+  color: #bdc9cc;
+}
 
 footer {
   text-align: center;
@@ -174,6 +209,8 @@ footer {
   justify-content: center;
   padding: 18px;
 }
+
+.overlay.show { display: flex; }
 
 .popup {
   width: min(520px, 100%);
@@ -194,9 +231,13 @@ footer {
   margin: 0 auto 14px;
 }
 
+#popupImage[hidden] { display: none; }
+
 @media (max-width: 480px) {
+  body { padding: 14px; }
   .goals { grid-template-columns: 1fr; }
   .countdown { gap: 5px; }
+  .timebox { padding: 12px 3px; }
 }
 </style>
 </head>
@@ -214,25 +255,40 @@ footer {
   <div class="label">目前筹得金额</div>
   <div class="money" id="moneyDisplay">RM 0.00</div>
 
-  <div class="bar">
+  <div
+    class="bar"
+    role="progressbar"
+    aria-label="RM100 筹款进度"
+    aria-valuemin="0"
+    aria-valuemax="100"
+    aria-valuenow="0"
+    id="progressContainer"
+  >
     <div id="progressBar"></div>
   </div>
+
+  <p class="hint" id="progressText">距离 RM100 目标还有 RM100.00</p>
 
   <div class="goals">
     <div class="goal">
       <strong id="goal10">🔒 RM10 成就</strong>
-      <span id="goal10Text">筹款超过 RM10 即可解锁</span>
+      <span id="goal10Text">筹款达到 RM10 即可解锁</span>
     </div>
 
     <div class="goal">
       <strong id="goal100">🔒 RM100 成就</strong>
-      <span id="goal100Text">筹款超过 RM100 即可解锁</span>
+      <span id="goal100Text">筹款达到 RM100 即可解锁</span>
     </div>
   </div>
 
   <div class="form-row">
-    <button class="secondary" id="unlockButton">🔒 管理员解锁</button>
-    <span id="lockStatus">目前已锁定</span>
+    <button class="secondary" id="unlockButton">
+      🔒 管理员解锁
+    </button>
+    <button class="secondary" id="lockButton" hidden>
+      🔐 重新锁定
+    </button>
+    <span id="lockStatus" class="status">🔒 目前已锁定</span>
   </div>
 
   <div class="form-row">
@@ -240,6 +296,7 @@ footer {
       id="amountInput"
       type="number"
       min="0"
+      max="99999999999999999.99"
       step="0.01"
       placeholder="请先输入密码解锁"
       disabled
@@ -248,14 +305,20 @@ footer {
     <button class="primary" id="saveButton" disabled>
       更新金额
     </button>
+  </div>
 
-    <button class="secondary" id="lockButton" hidden>
-      🔐 重新锁定
+  <div class="form-row">
+    <button class="secondary" id="syncButton">
+      🔄 立即同步
     </button>
+    <span id="cloudStatus" class="status wait" aria-live="polite">
+      ☁️ 正在初始化……
+    </span>
   </div>
 
   <p class="hint">
-    修改金额需要管理员密码。金额保存在当前浏览器中。
+    云端同步采用定时检查。金额更新成功后会保存至 JSONBin。
+    若云端不可用，网页会保留上次显示的金额。
   </p>
 </section>
 
@@ -264,22 +327,44 @@ footer {
   <h2>特别日子倒数</h2>
 
   <div class="countdown">
-    <div class="timebox"><span class="num" id="days">0</span><span class="unit">天</span></div>
-    <div class="timebox"><span class="num" id="hours">00</span><span class="unit">小时</span></div>
-    <div class="timebox"><span class="num" id="minutes">00</span><span class="unit">分钟</span></div>
-    <div class="timebox"><span class="num" id="seconds">00</span><span class="unit">秒</span></div>
+    <div class="timebox">
+      <span class="num" id="days">0</span>
+      <span class="unit">天</span>
+    </div>
+    <div class="timebox">
+      <span class="num" id="hours">00</span>
+      <span class="unit">小时</span>
+    </div>
+    <div class="timebox">
+      <span class="num" id="minutes">00</span>
+      <span class="unit">分钟</span>
+    </div>
+    <div class="timebox">
+      <span class="num" id="seconds">00</span>
+      <span class="unit">秒</span>
+    </div>
   </div>
 
   <p class="hint" id="countdownMessage"></p>
 </section>
 
-<footer>义卖会筹款统计网页</footer>
+<footer>
+  义卖会筹款统计网页 · 云端数据由 JSONBin 提供
+</footer>
+
 </main>
 
-<div class="overlay" id="popupOverlay" role="dialog" aria-modal="true">
+<div
+  class="overlay"
+  id="popupOverlay"
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="popupTitle"
+  aria-describedby="popupText"
+>
   <div class="popup">
     <h2 id="popupTitle">获得成就！</h2>
-    <img id="popupImage" src="1.png" alt="成就图片">
+    <img id="popupImage" src="1.png" alt="成就图片" hidden>
     <p id="popupText"></p>
     <button class="primary" id="nextPopupButton">关闭</button>
   </div>
@@ -288,15 +373,39 @@ footer {
 <script>
 "use strict";
 
-// =============================
-// 管理员密码设置
-// =============================
-const ADMIN_PASSWORD = "123456767";
-let isUnlocked = false;
+// =====================================================
+// 1. 基本设置
+// =====================================================
 
-// =============================
-// 网页元素
-// =============================
+// 注意：公开 HTML 不应该保存有写入权限的 API Key。
+// 请填入你新创建的、具有所需权限的 Access Key。
+// 公开网站建议通过后端代理执行写入操作。
+const JSONBIN_BIN_ID = "6ae0a46effd5d160538fd1ce";
+const JSONBIN_API_KEY = "$2a$10$zOalWoa/HV4ayoHKsK7ID.PHk7zbO7YBrz3QdJWeUWRC8kfst83tC";
+
+const JSONBIN_API_URL =
+  `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
+
+const SYNC_INTERVAL = 5000;
+const MAX_AMOUNT = 9999999999.99;
+
+// 如果管理员密码写在前端，访客可以查看源代码。
+// 此处仅保留原有的界面锁定功能，不是安全的服务器端认证。
+const ADMIN_PASSWORD = "min-yi-shi-wei-tian";
+
+let isUnlocked = false;
+let amount = 0;
+let popupQueue = [];
+let isSyncing = false;
+let isSaving = false;
+let lastCloudAmount = null;
+let lastUpdatedAt = null;
+let lastFocusedElement = null;
+
+// =====================================================
+// 2. 网页元素
+// =====================================================
+
 const amountInput = document.getElementById("amountInput");
 const saveButton = document.getElementById("saveButton");
 const unlockButton = document.getElementById("unlockButton");
@@ -305,6 +414,11 @@ const lockStatus = document.getElementById("lockStatus");
 
 const moneyDisplay = document.getElementById("moneyDisplay");
 const progressBar = document.getElementById("progressBar");
+const progressContainer = document.getElementById("progressContainer");
+const progressText = document.getElementById("progressText");
+
+const cloudStatus = document.getElementById("cloudStatus");
+const syncButton = document.getElementById("syncButton");
 
 const overlay = document.getElementById("popupOverlay");
 const popupImage = document.getElementById("popupImage");
@@ -312,30 +426,236 @@ const popupTitle = document.getElementById("popupTitle");
 const popupText = document.getElementById("popupText");
 const nextPopupButton = document.getElementById("nextPopupButton");
 
-let amount = 0;
-let popupQueue = [];
+// =====================================================
+// 3. 本地缓存
+// =====================================================
 
-// =============================
-// 读取已保存金额
-// =============================
-try {
-  amount = Number(localStorage.getItem("fundraisingAmount") || 0);
+function readLocalAmount() {
+  try {
+    const raw = localStorage.getItem("fundraisingAmount");
 
-  if (!Number.isFinite(amount) || amount < 0) {
-    amount = 0;
+    if (raw === null) return 0;
+
+    const value = Number(raw);
+
+    if (
+      Number.isFinite(value) &&
+      value >= 0 &&
+      value <= MAX_AMOUNT
+    ) {
+      return Math.round(value * 100) / 100;
+    }
+  } catch (error) {
+    console.warn("无法读取本地缓存：", error);
   }
-} catch (error) {
-  amount = 0;
+
+  return 0;
 }
 
-// =============================
-// 锁定和解锁
-// =============================
+function cacheAmount(value) {
+  try {
+    localStorage.setItem("fundraisingAmount", String(value));
+  } catch (error) {
+    console.warn("无法保存本地缓存：", error);
+  }
+}
+
+amount = readLocalAmount();
+
+// =====================================================
+// 4. 状态提示
+// =====================================================
+
+function setCloudStatus(message, type = "wait") {
+  cloudStatus.textContent = message;
+  cloudStatus.className = `status ${type}`;
+}
+
+function validateConfiguration() {
+  if (
+    !JSONBIN_BIN_ID ||
+    JSONBIN_BIN_ID === "6ae0a46effd5d160538fd1ce" ||
+    !JSONBIN_API_KEY ||
+    JSONBIN_API_KEY === "$2a$10$zOalWoa/HV4ayoHKsK7ID.PHk7zbO7YBrz3QdJWeUWRC8kfst83tC"
+  ) {
+    setCloudStatus("⚙️ 请先填写 JSONBin 配置", "error");
+    return false;
+  }
+
+  return true;
+}
+
+// =====================================================
+// 5. JSONBin API
+// =====================================================
+
+async function loadCloudRecord() {
+  const response = await fetch(JSONBIN_API_URL, {
+    method: "GET",
+    headers: {
+      "X-Access-Key": JSONBIN_API_KEY,
+      "Accept": "application/json"
+    },
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw new Error(`读取失败：HTTP ${response.status}`);
+  }
+
+  const result = await response.json();
+  const record = result.record;
+
+  if (
+    !record ||
+    typeof record !== "object" ||
+    Array.isArray(record)
+  ) {
+    throw new Error("云端 JSON 格式不正确");
+  }
+
+  const cloudAmount = Number(record.amount);
+
+  if (
+    !Number.isFinite(cloudAmount) ||
+    cloudAmount < 0 ||
+    cloudAmount > MAX_AMOUNT
+  ) {
+    throw new Error("云端金额无效");
+  }
+
+  return {
+    amount: Math.round(cloudAmount * 100) / 100,
+    updatedAt: record.updatedAt || null
+  };
+}
+
+async function saveCloudRecord(value) {
+  const payload = {
+    amount: Math.round(value * 100) / 100,
+    updatedAt: new Date().toISOString()
+  };
+
+  const response = await fetch(JSONBIN_API_URL, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Access-Key": JSONBIN_API_KEY
+    },
+    body: JSON.stringify(payload)
+  });
+
+  if (!response.ok) {
+    throw new Error(`保存失败：HTTP ${response.status}`);
+  }
+
+  return payload;
+}
+
+// =====================================================
+// 6. 成就系统
+// =====================================================
+
+function renderAmount() {
+  moneyDisplay.textContent = formatRM(amount);
+
+  if (document.activeElement !== amountInput) {
+    amountInput.value = amount.toFixed(2);
+  }
+
+  const progress = Math.min(amount, 100);
+
+  progressBar.style.width = `${progress}%`;
+  progressContainer.setAttribute("aria-valuenow", String(progress));
+
+  progressText.textContent = amount >= 100
+    ? "🎉 已达到 RM100 筹款目标！"
+    : `距离 RM100 目标还有 ${formatRM(100 - amount)}`;
+
+  const reached10 = amount >= 10;
+  const reached100 = amount >= 100;
+
+  document.getElementById("goal10").textContent =
+    reached10 ? "✅ RM10 成就已解锁" : "🔒 RM10 成就";
+
+  document.getElementById("goal10Text").textContent =
+    reached10 ? "太棒了！已达到 RM10！" : "筹款达到 RM10 即可解锁";
+
+  document.getElementById("goal100").textContent =
+    reached100 ? "🏆 RM100 成就已解锁" : "🔒 RM100 成就";
+
+  document.getElementById("goal100Text").textContent =
+    reached100 ? "太厉害了！已达到 RM100！" : "筹款达到 RM100 即可解锁";
+}
+
+function formatRM(value) {
+  return "RM " + value.toLocaleString("en-MY", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  });
+}
+
+// =====================================================
+// 7. 成就弹窗
+// =====================================================
+
+function showPopup(title, message, image = "") {
+  popupTitle.textContent = title;
+  popupText.textContent = message;
+
+  if (image) {
+    popupImage.src = image;
+    popupImage.hidden = false;
+  } else {
+    popupImage.removeAttribute("src");
+    popupImage.hidden = true;
+  }
+
+  lastFocusedElement = document.activeElement;
+  overlay.classList.add("show");
+  nextPopupButton.focus();
+}
+
+function closePopup() {
+  overlay.classList.remove("show");
+
+  if (lastFocusedElement &&
+      typeof lastFocusedElement.focus === "function") {
+    lastFocusedElement.focus();
+  }
+
+  if (popupQueue.length > 0) {
+    const next = popupQueue.shift();
+    showPopup(next.title, next.message, next.image);
+  }
+}
+
+function enqueueAchievement(title, message, image) {
+  popupQueue.push({ title, message, image });
+
+  if (!overlay.classList.contains("show")) {
+    const next = popupQueue.shift();
+    showPopup(next.title, next.message, next.image);
+  }
+}
+
+nextPopupButton.addEventListener("click", closePopup);
+
+overlay.addEventListener("click", event => {
+  if (event.target === overlay) {
+    closePopup();
+  }
+});
+
+// =====================================================
+// 8. 锁定和解锁
+// =====================================================
+
 function setUnlocked(unlocked) {
   isUnlocked = unlocked;
 
   amountInput.disabled = !unlocked;
-  saveButton.disabled = !unlocked;
+  saveButton.disabled = !unlocked || isSaving;
 
   unlockButton.hidden = unlocked;
   lockButton.hidden = !unlocked;
@@ -356,11 +676,14 @@ unlockButton.addEventListener("click", () => {
 
   if (password === null) return;
 
-  if (password === ADMIN_PASSWORD) {
+  if (
+    ADMIN_PASSWORD !== "请替换成你的管理员密码" &&
+    password === ADMIN_PASSWORD
+  ) {
     setUnlocked(true);
     alert("✅ 解锁成功！");
   } else {
-    alert("❌ 密码错误！");
+    alert("❌ 密码错误，或管理员密码尚未设置！");
   }
 });
 
@@ -369,46 +692,17 @@ lockButton.addEventListener("click", () => {
   alert("🔒 已重新锁定！");
 });
 
-// =============================
-// 显示金额和成就
-// =============================
-function formatRM(value) {
-  return "RM " + value.toLocaleString("en-MY", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-}
+// =====================================================
+// 9. 保存金额到云端
+// =====================================================
 
-function renderAmount() {
-  moneyDisplay.textContent = formatRM(amount);
-
-  if (document.activeElement !== amountInput) {
-    amountInput.value = amount.toFixed(2);
-  }
-
-  progressBar.style.width = Math.min(amount, 100) + "%";
-
-  document.getElementById("goal10").textContent =
-    amount > 10 ? "✅ RM10 成就已解锁" : "🔒 RM10 成就";
-
-  document.getElementById("goal10Text").textContent =
-    amount > 10 ? "太棒了！已经超过 RM10！" : "筹款超过 RM10 即可解锁";
-
-  document.getElementById("goal100").textContent =
-    amount > 100 ? "🏆 RM100 成就已解锁" : "🔒 RM100 成就";
-
-  document.getElementById("goal100Text").textContent =
-    amount > 100 ? "太厉害了！已经超过 RM100！" : "筹款超过 RM100 即可解锁";
-}
-
-// =============================
-// 保存金额：必须已解锁
-// =============================
-function saveAmount() {
+async function saveAmount() {
   if (!isUnlocked) {
     alert("🔒 请先输入管理员密码！");
     return;
   }
+
+  if (isSaving) return;
 
   const rawValue = amountInput.value;
 
@@ -419,22 +713,54 @@ function saveAmount() {
 
   const value = Number(rawValue);
 
-  if (!Number.isFinite(value) || value < 0) {
-    alert("请输入有效金额，不能小于 RM0。");
+  if (
+    !Number.isFinite(value) ||
+    value < 0 ||
+    value > MAX_AMOUNT
+  ) {
+    alert("请输入有效金额。金额不能小于 RM0 或超过允许范围。");
     return;
   }
 
-  amount = Math.round(value * 100) / 100;
+  const newAmount = Math.round(value * 100) / 100;
+
+  if (!validateConfiguration()) {
+    alert("请先完成 JSONBin 配置。");
+    return;
+  }
+
+  isSaving = true;
+  saveButton.disabled = true;
+  syncButton.disabled = true;
+  setCloudStatus("☁️ 正在保存云端数据……", "wait");
 
   try {
-    localStorage.setItem("fundraisingAmount", String(amount));
-  } catch (error) {
-    alert("浏览器无法保存金额，请检查浏览器设置。");
-    return;
-  }
+    await saveCloudRecord(newAmount);
 
-  renderAmount();
-  alert("✅ 筹款金额已更新！");
+    amount = newAmount;
+    lastCloudAmount = newAmount;
+    lastUpdatedAt = new Date().toISOString();
+
+    cacheAmount(amount);
+    renderAmount();
+
+    setCloudStatus("✅ 云端保存成功", "ok");
+    alert("✅ 筹款金额已保存到云端！");
+  } catch (error) {
+    console.error(error);
+
+    setCloudStatus("❌ 云端保存失败", "error");
+
+    alert(
+      "云端保存失败，原有金额没有被修改。\n\n" +
+      "请检查 Bin ID、Access Key、网络和 JSONBin 权限。\n\n" +
+      error.message
+    );
+  } finally {
+    isSaving = false;
+    saveButton.disabled = !isUnlocked;
+    syncButton.disabled = false;
+  }
 }
 
 saveButton.addEventListener("click", saveAmount);
@@ -443,25 +769,82 @@ amountInput.addEventListener("keydown", event => {
   if (event.key === "Enter") saveAmount();
 });
 
-// =============================
-// 11月11日倒数
-// =============================
+// =====================================================
+// 10. 从云端同步金额
+// =====================================================
+
+async function syncCloudAmount() {
+  if (isSyncing || isSaving) return;
+
+  if (!validateConfiguration()) return;
+
+  isSyncing = true;
+  syncButton.disabled = true;
+
+  try {
+    const record = await loadCloudRecord();
+    const cloudAmount = record.amount;
+
+    if (
+      lastCloudAmount !== null &&
+      cloudAmount > lastCloudAmount
+    ) {
+      if (lastCloudAmount < 10 && cloudAmount >= 10) {
+        enqueueAchievement(
+          "🎉 解锁 RM10 成就！",
+          "筹款已经达到 RM10，继续加油！",
+          "1.png"
+        );
+      }
+
+      if (lastCloudAmount < 100 && cloudAmount >= 100) {
+        enqueueAchievement(
+          "🏆 解锁 RM100 成就！",
+          "太棒了！筹款已经达到 RM100！",
+          "mc2.png"
+        );
+      }
+    }
+
+    amount = cloudAmount;
+    lastCloudAmount = cloudAmount;
+    lastUpdatedAt = record.updatedAt;
+
+    cacheAmount(amount);
+    renderAmount();
+
+    setCloudStatus("☁️ 云端同步成功", "ok");
+  } catch (error) {
+    console.error("云端同步失败：", error);
+    setCloudStatus(`⚠️ 同步失败：${error.message}`, "error");
+  } finally {
+    isSyncing = false;
+    syncButton.disabled = false;
+  }
+}
+
+syncButton.addEventListener("click", syncCloudAmount);
+
+// =====================================================
+// 11. 11 月 11 日倒数
+// =====================================================
+
 function nextNovember11(now) {
   let year = now.getFullYear();
+  let target = new Date(year, 10, 11, 0, 0, 0);
 
-  const target = new Date(year, 10, 11, 0, 0, 0);
-
-  if (now > target && !(now.getMonth() === 10 && now.getDate() === 11)) {
+  if (now >= target) {
     year++;
+    target = new Date(year, 10, 11, 0, 0, 0);
   }
 
-  return new Date(year, 10, 11, 0, 0, 0);
+  return target;
 }
 
 function updateCountdown() {
   const now = new Date();
   const target = nextNovember11(now);
-  const diff = Math.max(0, target - now);
+  const diff = Math.max(0, target.getTime() - now.getTime());
 
   document.getElementById("days").textContent =
     Math.floor(diff / 86400000);
@@ -476,5 +859,97 @@ function updateCountdown() {
     String(Math.floor(diff / 1000) % 60).padStart(2, "0");
 
   document.getElementById("countdownMessage").textContent =
-    now.getMonth() === 10 &&
+    "目标日期：" +
+    target.getFullYear() +
+    " 年 11 月 11 日";
+}
 
+// =====================================================
+// 12. 启动弹窗
+// =====================================================
+
+let startupPopupsChecked = false;
+
+function checkStartupPopups(startupAmount) {
+  // 防止重复检查
+  if (startupPopupsChecked) return;
+  startupPopupsChecked = true;
+
+  const now = new Date();
+  const startupPopups = [];
+
+  // 11 月 11 日：显示特别图片
+  if (
+    now.getMonth() === 10 &&
+    now.getDate() === 11
+  ) {
+    startupPopups.push({
+      title: "🎉 特别日子！",
+      message: "今天是 11 月 11 日！祝义卖会一切顺利！",
+      image: "mc.png"
+    });
+  }
+
+  // 超过 RM100：显示 mc2.png
+  if (startupAmount > 100) {
+    startupPopups.push({
+      title: "🏆 RM100 成就！",
+      message: "义卖会筹款已经超过 RM100！",
+      image: "mc2.png"
+    });
+  }
+
+  // 超过 RM10：显示 1.png
+  else if (startupAmount > 10) {
+    startupPopups.push({
+      title: "🎉 RM10 成就！",
+      message: "义卖会筹款已经超过 RM10！",
+      image: "1.png"
+    });
+  }
+
+  // 加入弹窗队列，避免覆盖正在显示的弹窗
+  popupQueue.push(...startupPopups);
+
+  // 如果当前没有弹窗，显示队列中的第一个
+  if (
+    !overlay.classList.contains("show") &&
+    popupQueue.length > 0
+  ) {
+    const first = popupQueue.shift();
+
+    showPopup(
+      first.title,
+      first.message,
+      first.image
+    );
+  }
+}
+
+// =====================================================
+// 13. 初始化
+// =====================================================
+
+renderAmount();
+updateCountdown();
+setUnlocked(false);
+
+setInterval(updateCountdown, 1000);
+
+async function initializeWebsite() {
+  // 先读取云端数据
+  await syncCloudAmount();
+
+  // 同步后，根据当前金额显示启动弹窗
+  checkStartupPopups(amount);
+}
+
+initializeWebsite();
+
+// 每隔 5 秒检查云端金额
+setInterval(syncCloudAmount, SYNC_INTERVAL);
+
+
+</script>
+</body>
+</html>
