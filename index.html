@@ -472,16 +472,18 @@ function setCloudStatus(message, type = "wait") {
 }
 
 function validateConfiguration() {
-  if (
-    !JSONBIN_BIN_ID ||
-    JSONBIN_BIN_ID === "6ae0a46effd5d160538fd1ce" ||
-    !JSONBIN_API_KEY ||
-    JSONBIN_API_KEY === "$2a$10$zOalWoa/HV4ayoHKsK7ID.PHk7zbO7YBrz3QdJWeUWRC8kfst83tC"
-  ) {
-    setCloudStatus("⚙️ 请先填写 JSONBin 配置", "error");
+  const binId = JSONBIN_BIN_ID.trim();
+  const apiKey = JSONBIN_API_KEY.trim();
+
+  if (!binId || !apiKey) {
+    setCloudStatus(
+      "⚙️ 请填写 JSONBin Bin ID 和 Access Key",
+      "error"
+    );
     return false;
   }
 
+  setCloudStatus("☁️ 配置已填写，正在连接云端……", "wait");
   return true;
 }
 
