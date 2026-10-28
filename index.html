@@ -252,32 +252,32 @@ footer {
 </header>
 
 <section class="card">
-  <div class="label">目前筹得金额</div>
+  <div class="label">目前盈利金额</div>
   <div class="money" id="moneyDisplay">RM 0.00</div>
 
   <div
     class="bar"
     role="progressbar"
-    aria-label="RM100 筹款进度"
+    aria-label="RM600 筹款进度"
     aria-valuemin="0"
-    aria-valuemax="100"
+    aria-valuemax="600"
     aria-valuenow="0"
     id="progressContainer"
   >
     <div id="progressBar"></div>
   </div>
 
-  <p class="hint" id="progressText">距离 RM100 目标还有 RM100.00</p>
+  <p class="hint" id="progressText">距离 RM600 目标还有 RM100.00</p>
 
   <div class="goals">
     <div class="goal">
       <strong id="goal10">🔒 RM10 成就</strong>
-      <span id="goal10Text">筹款达到 RM10 即可解锁</span>
+      <span id="goal10Text">盈利达到 RM10 即可解锁</span>
     </div>
 
     <div class="goal">
       <strong id="goal100">🔒 RM100 成就</strong>
-      <span id="goal100Text">筹款达到 RM100 即可解锁</span>
+      <span id="goal100Text">盈利达到 RM100 即可解锁</span>
     </div>
   </div>
 
@@ -571,8 +571,8 @@ function renderAmount() {
   progressContainer.setAttribute("aria-valuenow", String(progress));
 
   progressText.textContent = amount >= 100
-    ? "🎉 已达到 RM100 筹款目标！"
-    : `距离 RM100 目标还有 ${formatRM(100 - amount)}`;
+    ? "🎉 已达到 RM100 盈利目标！"
+    : `距离 RM600 目标还有 ${formatRM(600 - amount)}`;
 
   const reached10 = amount >= 10;
   const reached100 = amount >= 100;
@@ -587,7 +587,7 @@ function renderAmount() {
     reached100 ? "🏆 RM100 成就已解锁" : "🔒 RM100 成就";
 
   document.getElementById("goal100Text").textContent =
-    reached100 ? "太厉害了！已达到 RM100！" : "筹款达到 RM100 即可解锁";
+    reached100 ? "太厉害了！已达到 RM100！" : "赚到的钱达到 RM100 即可解锁";
 }
 
 function formatRM(value) {
@@ -794,7 +794,7 @@ async function syncCloudAmount() {
       if (lastCloudAmount < 10 && cloudAmount >= 10) {
         enqueueAchievement(
           "🎉 解锁 RM10 成就！",
-          "筹款已经达到 RM10，继续加油！",
+          "赚到的钱已经达到 RM10，继续加油！",
           "1.png"
         );
       }
@@ -802,7 +802,7 @@ async function syncCloudAmount() {
       if (lastCloudAmount < 100 && cloudAmount >= 100) {
         enqueueAchievement(
           "🏆 解锁 RM100 成就！",
-          "太棒了！筹款已经达到 RM100！",
+          "太棒了！赚到的钱已经达到 RM100！",
           "mc2.png"
         );
       }
