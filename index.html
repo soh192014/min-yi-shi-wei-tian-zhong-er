@@ -247,7 +247,7 @@ footer {
 
 <header>
   <span class="badge">⛏️ 义卖会 · 成就统计</span>
-  <h1>🏆 义卖会筹款进度</h1>
+  <h1>🏆 义卖会盈利进度</h1>
   <p>每一份支持，都是我们前进的力量！</p>
 </header>
 
@@ -267,7 +267,7 @@ footer {
     <div id="progressBar"></div>
   </div>
 
-  <p class="hint" id="progressText">距离 RM600 目标还有 RM100.00</p>
+  <p class="hint" id="progressText">距离 RM600 目标还有 RM600.00</p>
 
   <div class="goals">
     <div class="goal">
@@ -278,6 +278,10 @@ footer {
     <div class="goal">
       <strong id="goal100">🔒 RM100 成就</strong>
       <span id="goal100Text">盈利达到 RM100 即可解锁</span>
+    </div>
+    <div class="goal">
+      <strong id="goal600">🔒 RM600 成就</strong>
+      <span id="goal600Text">盈利达到 RM600 即可解锁</span>
     </div>
   </div>
 
@@ -475,7 +479,7 @@ function validateConfiguration() {
   const binId = JSONBIN_BIN_ID.trim();
   const apiKey = JSONBIN_API_KEY.trim();
 
-  if (!binId || !apiKey) {
+  if (!binId || !apiKey || apiKey === "PASTE_YOUR_NEW_JSONBIN_ACCESS_KEY_HERE") {
     setCloudStatus(
       "⚙️ 请填写 JSONBin Bin ID 和 Access Key",
       "error"
@@ -502,7 +506,8 @@ async function loadCloudRecord() {
   });
 
   if (!response.ok) {
-    throw new Error(`读取失败：HTTP ${response.status}`);
+    const detail = await response.text().catch(() => "");
+    throw new Error(`读取失败：HTTP ${response.status}${detail ? " — " + detail.slice(0, 180) : ""}`);
   }
 
   const result = await response.json();
@@ -548,7 +553,8 @@ async function saveCloudRecord(value) {
   });
 
   if (!response.ok) {
-    throw new Error(`保存失败：HTTP ${response.status}`);
+    const detail = await response.text().catch(() => "");
+    throw new Error(`保存失败：HTTP ${response.status}${detail ? " — " + detail.slice(0, 180) : ""}`);
   }
 
   return payload;
@@ -565,17 +571,21 @@ function renderAmount() {
     amountInput.value = amount.toFixed(2);
   }
 
-  const progress = Math.min(amount, 100);
+  const progress = Math.min((amount / 600) * 100, 100);
 
   progressBar.style.width = `${progress}%`;
-  progressContainer.setAttribute("aria-valuenow", String(progress));
+  progressContainer.setAttribute(
+    "aria-valuenow",
+    String(Math.min(amount, 600))
+  );
 
-  progressText.textContent = amount >= 100
-    ? "🎉 已达到 RM100 盈利目标！"
+  progressText.textContent = amount >= 600
+    ? "🎉 已达到 RM600 盈利目标！"
     : `距离 RM600 目标还有 ${formatRM(600 - amount)}`;
 
   const reached10 = amount >= 10;
   const reached100 = amount >= 100;
+  const reached600 = amount >= 600;
 
   document.getElementById("goal10").textContent =
     reached10 ? "✅ RM10 成就已解锁" : "🔒 RM10 成就";
@@ -588,6 +598,12 @@ function renderAmount() {
 
   document.getElementById("goal100Text").textContent =
     reached100 ? "太厉害了！已达到 RM100！" : "赚到的钱达到 RM100 即可解锁";
+
+  document.getElementById("goal600").textContent =
+    reached600 ? "🏆 RM600 成就已解锁" : "🔒 RM600 成就";
+
+  document.getElementById("goal600Text").textContent =
+    reached600 ? "太棒了！已达到 RM600 目标！" : "筹款达到 RM600 即可解锁";
 }
 
 function formatRM(value) {
@@ -795,15 +811,21 @@ async function syncCloudAmount() {
         enqueueAchievement(
           "🎉 解锁 RM10 成就！",
           "赚到的钱已经达到 RM10，继续加油！",
-          "1.png"
+          "5.png"
         );
       }
-
       if (lastCloudAmount < 100 && cloudAmount >= 100) {
         enqueueAchievement(
           "🏆 解锁 RM100 成就！",
           "太棒了！赚到的钱已经达到 RM100！",
-          "mc2.png"
+          "4.png"
+        );
+      }
+      if (lastCloudAmount < 600 && cloudAmount >= 600) {
+        enqueueAchievement(
+          "🏆 解锁 RM600 成就！",
+          "太棒了！赚到的钱已经达到 RM600！",
+          "1.png"
         );
       }
     }
@@ -873,58 +895,47 @@ function updateCountdown() {
 let startupPopupsChecked = false;
 
 function checkStartupPopups(startupAmount) {
-  // 防止重复检查
   if (startupPopupsChecked) return;
   startupPopupsChecked = true;
 
   const now = new Date();
   const startupPopups = [];
 
-  // 11 月 11 日：显示特别图片
-  if (
-    now.getMonth() === 10 &&
-    now.getDate() === 11
-  ) {
+  // 11 月 11 日只显示一次特别弹窗
+  if (now.getMonth() === 10 && now.getDate() === 11) {
     startupPopups.push({
       title: "🎉 特别日子！",
       message: "今天是 11 月 11 日！祝义卖会一切顺利！",
-      image: "mc.png"
+      image: "3.png"
     });
   }
 
-  // 超过 RM100：显示 mc2.png
-  if (startupAmount > 100) {
+  // 只显示已达到的最高金额成就，避免条件顺序冲突
+  if (startupAmount >= 600) {
     startupPopups.push({
-      title: "🏆 RM100 成就！",
-      message: "义卖会筹款已经超过 RM100！",
-      image: "mc2.png"
-    });
-  }
-
-  // 超过 RM10：显示 1.png
-  else if (startupAmount > 10) {
-    startupPopups.push({
-      title: "🎉 RM10 成就！",
-      message: "义卖会筹款已经超过 RM10！",
+      title: "🏆 RM600 成就！",
+      message: "太棒了！义卖会筹款已经达到 RM600 目标！",
       image: "1.png"
     });
+  } else if (startupAmount >= 100) {
+    startupPopups.push({
+      title: "🏆 RM100 成就！",
+      message: "义卖会筹款已经达到 RM100！继续加油！",
+      image: "4.png"
+    });
+  } else if (startupAmount >= 10) {
+    startupPopups.push({
+      title: "🎉 RM10 成就！",
+      message: "义卖会筹款已经达到 RM10！继续加油！",
+      image: "5.png"
+    });
   }
 
-  // 加入弹窗队列，避免覆盖正在显示的弹窗
   popupQueue.push(...startupPopups);
 
-  // 如果当前没有弹窗，显示队列中的第一个
-  if (
-    !overlay.classList.contains("show") &&
-    popupQueue.length > 0
-  ) {
+  if (!overlay.classList.contains("show") && popupQueue.length > 0) {
     const first = popupQueue.shift();
-
-    showPopup(
-      first.title,
-      first.message,
-      first.image
-    );
+    showPopup(first.title, first.message, first.image);
   }
 }
 
