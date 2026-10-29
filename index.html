@@ -258,7 +258,7 @@ footer {
   <div
     class="bar"
     role="progressbar"
-    aria-label="RM600 筹款进度"
+    aria-label="RM600 盈利进度"
     aria-valuemin="0"
     aria-valuemax="600"
     aria-valuenow="0"
@@ -353,7 +353,7 @@ footer {
 </section>
 
 <footer>
-  义卖会筹款统计网页 · 云端数据由 JSONBin 提供
+  义卖会盈利统计网页 · 云端数据由 JSONBin 提供
 </footer>
 
 </main>
@@ -591,7 +591,7 @@ function renderAmount() {
     reached10 ? "✅ RM10 成就已解锁" : "🔒 RM10 成就";
 
   document.getElementById("goal10Text").textContent =
-    reached10 ? "太棒了！已达到 RM10！" : "筹款达到 RM10 即可解锁";
+    reached10 ? "太棒了！已达到 RM10！" : "盈利达到 RM10 即可解锁";
 
   document.getElementById("goal100").textContent =
     reached100 ? "🏆 RM100 成就已解锁" : "🔒 RM100 成就";
@@ -603,7 +603,7 @@ function renderAmount() {
     reached600 ? "🏆 RM600 成就已解锁" : "🔒 RM600 成就";
 
   document.getElementById("goal600Text").textContent =
-    reached600 ? "太棒了！已达到 RM600 目标！" : "筹款达到 RM600 即可解锁";
+    reached600 ? "太棒了！已达到 RM600 目标！" : "盈利达到 RM600 即可解锁";
 }
 
 function formatRM(value) {
@@ -725,7 +725,7 @@ async function saveAmount() {
   const rawValue = amountInput.value;
 
   if (rawValue.trim() === "") {
-    alert("请输入筹款金额。");
+    alert("请输入盈利金额。");
     return;
   }
 
@@ -763,7 +763,7 @@ async function saveAmount() {
     renderAmount();
 
     setCloudStatus("✅ 云端保存成功", "ok");
-    alert("✅ 筹款金额已保存到云端！");
+    alert("✅ 盈利金额已保存到云端！");
   } catch (error) {
     console.error(error);
 
@@ -914,19 +914,19 @@ function checkStartupPopups(startupAmount) {
   if (startupAmount >= 600) {
     startupPopups.push({
       title: "🏆 RM600 成就！",
-      message: "太棒了！义卖会筹款已经达到 RM600 目标！",
+      message: "太棒了！义卖会盈利已经达到 RM600 目标！",
       image: "1.png"
     });
   } else if (startupAmount >= 100) {
     startupPopups.push({
       title: "🏆 RM100 成就！",
-      message: "义卖会筹款已经达到 RM100！继续加油！",
+      message: "义卖会盈利已经达到 RM100！继续加油！",
       image: "4.png"
     });
   } else if (startupAmount >= 10) {
     startupPopups.push({
       title: "🎉 RM10 成就！",
-      message: "义卖会筹款已经达到 RM10！继续加油！",
+      message: "义卖会盈利已经达到 RM10！继续加油！",
       image: "5.png"
     });
   }
